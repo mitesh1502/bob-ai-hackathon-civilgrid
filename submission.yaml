@@ -1,0 +1,48 @@
+---
+# ============================================================
+# GridShield — IBM Bob AI Hackathon 2026
+# Submission manifest
+# ============================================================
+
+hackathon: "IBM Bob AI Hackathon 2026"
+challenge: "U1 — Power Outage Prediction & Grid Equipment Failure Advisor"
+
+team:
+  name: "GridShield Dev Team"
+  project: "GridShield"
+
+project:
+  name: "GridShield — Civil-Engineering-Aware Power Grid Advisor"
+  version: "0.3"
+  description: >
+    Transparent, rule-based advisory system that ranks grid maintenance
+    interventions using 13 scored factors spanning civil engineering,
+    weather forecast, terrain, vegetation, network topology, and
+    electrical sensor telemetry. Built with IBM Bob 2.0 as AI pair.
+
+entry_point:
+  type: "streamlit"
+  command: "python -m streamlit run src/app.py --server.port 8502"
+  working_directory: "bob-ai-hackathon-gridshield"
+  url: "http://localhost:8502"
+
+dependencies:
+  python: ">=3.10"
+  packages:
+    - streamlit
+    - pandas
+
+pipeline:
+  steps:
+    - src/data/generate_data.py
+    - src/scoring/risk_engine.py
+    - src/scoring/priority_engine.py
+    - src/recommendation/recommend.py
+
+tests:
+  command: "python -m pytest src/tests/ -v"
+  expected: "91 passed"
+
+bob_sessions: 5
+bob_defects_caught: 4
+bob_time_saved_hours: 22

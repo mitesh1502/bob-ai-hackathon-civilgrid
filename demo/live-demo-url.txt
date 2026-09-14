@@ -1,0 +1,10 @@
+NOT DEPLOYED
+
+GridShield runs locally only. To run it yourself:
+
+  pip install streamlit pandas
+  python -m streamlit run src/app.py --server.port 8502
+
+App will be available at: http://localhost:8502
+
+See docs/setup-guide.md for full instructions.

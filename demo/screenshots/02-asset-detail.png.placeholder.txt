@@ -1,0 +1,13 @@
+PLACEHOLDER — replace with a real screenshot before submission.
+
+To capture this screenshot:
+1. Launch: python -m streamlit run src/app.py --server.port 8502
+2. Open http://localhost:8502
+3. Click Tab 2 "Asset Detail"
+4. In the asset selector dropdown, choose A-04 (transformer with alarm readings)
+5. Take a screenshot showing:
+   - The factor bar chart (civil bars on left, electrical bars on right)
+   - Thermal / partial discharge / oil quality bars visibly non-zero
+   - The crew pre-positioning card at the bottom
+6. Save as: demo/screenshots/02-asset-detail.png
+   (delete this .txt placeholder once the .png is added)

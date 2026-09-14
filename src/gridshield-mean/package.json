@@ -1,0 +1,12 @@
+{
+  "name": "gridshield-mean",
+  "version": "1.0.0",
+  "description": "GridShield MEAN stack — root workspace scripts",
+  "scripts": {
+    "install:all": "cd backend && npm install && cd ../frontend && npm install",
+    "seed": "cd backend && node src/pipeline/seed.js",
+    "start:backend": "cd backend && npm run dev",
+    "start:frontend": "cd frontend && npm start",
+    "build:frontend": "cd frontend && npm run build"
+  }
+}

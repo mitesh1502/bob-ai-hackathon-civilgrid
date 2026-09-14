@@ -1,0 +1,70 @@
+name: Validate Submission
+
+on:
+  push:
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install streamlit pandas pytest pyyaml
+
+      - name: Validate submission.yaml
+        run: |
+          python - <<'EOF'
+          import yaml, sys
+          with open("submission.yaml") as f:
+              data = yaml.safe_load(f)
+          required = ["team", "submission"]
+          for key in required:
+              if key not in data:
+                  print(f"ERROR: Missing required key: {key}")
+                  sys.exit(1)
+          print("submission.yaml OK")
+          EOF
+
+      - name: Check required files exist
+        run: |
+          files=(
+            "submission.yaml"
+            "README.md"
+            "CONTRIBUTING.md"
+            "src/README.md"
+            "src/.env.example"
+            "docs/problem-statement.md"
+            "docs/solution-overview.md"
+            "docs/architecture.md"
+            "docs/setup-guide.md"
+            "demo/demo-video-link.txt"
+            "demo/live-demo-url.txt"
+            "demo/README.md"
+          )
+          for f in "${files[@]}"; do
+            if [ ! -f "$f" ]; then
+              echo "MISSING: $f"
+              exit 1
+            fi
+          done
+          echo "All required files present."
+
+      - name: Run data pipeline
+        run: |
+          cd src
+          python data/generate_data.py
+          python scoring/risk_engine.py
+          python scoring/priority_engine.py
+          python recommendation/recommend.py
+
+      - name: Run test suite
+        run: python -m pytest src/tests/ -v --tb=short
