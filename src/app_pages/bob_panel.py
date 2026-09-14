@@ -99,30 +99,12 @@ def render_bob_panel():
     st.markdown("---")
 
     # -----------------------------------------------------------------------
-    # Screenshot placeholder slots
+    # Session screenshots
     # -----------------------------------------------------------------------
     st.subheader("📸 Session Screenshots")
-    st.info(
-        "**Insert session screenshots here before demo.**\n\n"
-        "To add: export screenshots from your browser/desktop tool, then replace "
-        "each placeholder below by uploading via `st.image()` calls in the code, "
-        "or paste image paths into the `image_paths` list in `bob_panel.py`."
-    )
-    placeholder_labels = [
-        "S-01: Data generation scaffold",
-        "S-02: Risk engine + Streamlit app first run",
-        "S-03: Electrical sensor bars in Asset Detail",
-        "S-04: Advisor comparison with contrast sentence",
-        "S-05: BOB quality panel (this screen)",
-    ]
-    for label in placeholder_labels:
-        st.markdown(
-            f'<div style="border:2px dashed #888;padding:20px;border-radius:6px;'
-            f'text-align:center;color:#aaa;margin-bottom:8px;">'
-            f'📷 <em>{label}</em><br><small>Insert session screenshot here before demo</small>'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+    st.image("demo/screenshots/01-ranked-risk-queue.png", caption="S-01: Ranked Risk Queue")
+    st.image("demo/screenshots/02-asset-detail.png",      caption="S-02: Asset Detail")
+    st.image("demo/screenshots/03-model-evaluation.png",  caption="S-03: Model Evaluation")
 
     st.markdown("---")
 
