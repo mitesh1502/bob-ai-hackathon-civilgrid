@@ -10,6 +10,9 @@ challenge: "U1 — Power Outage Prediction & Grid Equipment Failure Advisor"
 team:
   name: "GridShield Dev Team"
   project: "GridShield"
+  lead:
+    name: "Mitesh Rana"
+    email: "ranamitesh1115@gmail.com"
 
 project:
   name: "GridShield — Civil-Engineering-Aware Power Grid Advisor"
