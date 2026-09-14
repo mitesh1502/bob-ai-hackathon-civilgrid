@@ -112,7 +112,7 @@
 | Metrics panel shows PR-AUC, Recall@Top-10, Brier, F1 | ✅ PASS |
 | README, model card, safety case, evaluation report, data dictionary all present | ✅ PASS |
 | Live demo reset restarts pipeline from seed | ✅ PASS (sidebar "Rerun Full Pipeline") |
-| App restartable with: `cd gridshield && python -m streamlit run src/app.py --server.port 8502` | ✅ PASS |
+| App restartable with: `cd bob-ai-hackathon-gridshield && python -m streamlit run src/app.py` | ✅ PASS |
 
 ---
 

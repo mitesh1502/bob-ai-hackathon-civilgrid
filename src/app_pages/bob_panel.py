@@ -7,8 +7,11 @@ Shows: change log, test counts, defects caught, time-saved estimate, release che
 import os
 import streamlit as st
 
-# Path to the session log markdown
-_DOCS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "docs")
+# Paths resolved relative to this file so they work regardless of cwd
+_SRC_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.normpath(os.path.join(_SRC_DIR, "..", ".."))
+_SCREENSHOTS_DIR = os.path.join(_PROJECT_ROOT, "demo", "screenshots")
+_DOCS_DIR = os.path.join(_PROJECT_ROOT, "docs")
 _SESSION_LOG_PATH = os.path.join(_DOCS_DIR, "bob-session-log.md")
 
 
@@ -102,9 +105,17 @@ def render_bob_panel():
     # Session screenshots
     # -----------------------------------------------------------------------
     st.subheader("📸 Session Screenshots")
-    st.image("demo/screenshots/01-ranked-risk-queue.png", caption="S-01: Ranked Risk Queue")
-    st.image("demo/screenshots/02-asset-detail.png",      caption="S-02: Asset Detail")
-    st.image("demo/screenshots/03-model-evaluation.png",  caption="S-03: Model Evaluation")
+    _screenshots = [
+        ("01-ranked-risk-queue.png", "S-01: Ranked Risk Queue"),
+        ("02-asset-detail.png",      "S-02: Asset Detail"),
+        ("03-model-evaluation.png",  "S-03: Model Evaluation"),
+    ]
+    for _fname, _caption in _screenshots:
+        _img_path = os.path.join(_SCREENSHOTS_DIR, _fname)
+        try:
+            st.image(_img_path, caption=_caption)
+        except Exception:
+            st.caption(f"_{_caption} — screenshot not available_")
 
     st.markdown("---")
 
@@ -112,12 +123,9 @@ def render_bob_panel():
     # Session log inline
     # -----------------------------------------------------------------------
     st.subheader("📄 BOB Session Log (bob-session-log.md)")
-    if os.path.exists(_SESSION_LOG_PATH):
+    try:
         with open(_SESSION_LOG_PATH, encoding="utf-8") as f:
             content = f.read()
         st.markdown(content)
-    else:
-        st.warning(
-            f"Session log not found at `{_SESSION_LOG_PATH}`. "
-            "It should be at `gridshield/docs/bob-session-log.md`."
-        )
+    except Exception:
+        st.caption("_Session log not available._")

@@ -8,7 +8,7 @@ Thank you for your interest in GridShield — IBM Bob AI Hackathon 2026.
 pip install streamlit pandas pytest
 cd src
 python pipeline.py          # generate data + run all engines
-python -m streamlit run app.py --server.port 8502
+python -m streamlit run app.py
 ```
 
 ## Running Tests

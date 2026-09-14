@@ -11,4 +11,4 @@ Place the following three screenshots here before final submission:
 To capture: launch the app, take browser screenshots, and save them here using the filenames above.
 
 Run the app with:
-  python -m streamlit run src/app.py --server.port 8502
+  python -m streamlit run src/app.py

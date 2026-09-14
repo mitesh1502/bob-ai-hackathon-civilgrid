@@ -60,10 +60,10 @@ pip install streamlit pandas
 
 ```bash
 # From the submission root:
-python -m streamlit run src/app.py --server.port 8502
+python -m streamlit run src/app.py
 ```
 
-App opens at **http://localhost:8502**
+App opens at **http://localhost:8501**
 
 The app auto-detects whether `final_report.csv` exists. If it does, the dashboard loads immediately. If not, click **"🔄 Rerun Full Pipeline"** in the sidebar.
 

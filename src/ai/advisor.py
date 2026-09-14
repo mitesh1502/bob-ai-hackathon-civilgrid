@@ -95,8 +95,9 @@ def _detect_asset_ids(question: str, df: pd.DataFrame) -> list[str]:
 # ---------------------------------------------------------------------------
 
 def _fmt_currency(value) -> str:
+    """Format a currency value with $ escaped for Streamlit Markdown rendering."""
     try:
-        return f"${int(value):,}"
+        return r"\$" + f"{int(value):,}"
     except (ValueError, TypeError):
         return str(value)
 

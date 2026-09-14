@@ -45,7 +45,7 @@ src/
 **To launch:**
 ```bash
 # From the submission root (one level above src/):
-python -m streamlit run src/app.py --server.port 8502
+python -m streamlit run src/app.py
 ```
 
 **To run tests:**

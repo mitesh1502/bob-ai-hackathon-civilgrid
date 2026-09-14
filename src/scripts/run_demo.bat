@@ -137,20 +137,20 @@ echo.
 echo  [5/5] Launching GridShield app...
 echo.
 echo  The app will open in your browser at:
-echo    http://localhost:8502
+echo    http://localhost:8501
 echo.
 echo  Press Ctrl+C in this window to stop the app.
 echo.
 
 cd /d "%SRC_DIR%"
-python -m streamlit run app.py --server.headless false --browser.gatherUsageStats false --server.port 8502
+python -m streamlit run app.py --server.headless false --browser.gatherUsageStats false
 
 if %errorlevel% neq 0 (
     echo.
     echo  ERROR: Streamlit failed to start.
     echo  Try running manually:
     echo    cd "%SRC_DIR%"
-    echo    python -m streamlit run app.py --server.port 8502
+    echo    python -m streamlit run app.py
     echo.
 )
 

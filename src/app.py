@@ -592,28 +592,32 @@ def tab_reactive_vs_preventive(df: pd.DataFrame, incidents: pd.DataFrame):
     total_preventive_cost = top10_df["estimated_intervention_cost"].sum()
     preventive_customers  = top10_df["downstream_customers"].sum()
 
+    def _md_currency(v) -> str:
+        """fmt_currency with $ escaped so Streamlit Markdown doesn't treat it as LaTeX."""
+        return fmt_currency(v).replace("$", r"\$")
+
     col_a, col_b = st.columns(2)
     with col_a:
         st.error(
             f"**Reactive approach (historical)**\n\n"
             f"• {len(incidents)} recorded incidents\n"
             f"• {total_downtime_hist:.0f} total downtime hours\n"
-            f"• Estimated cost of failures: {fmt_currency(est_cost_reactive)}"
+            f"• Estimated cost of failures: {_md_currency(est_cost_reactive)}"
         )
     with col_b:
         st.success(
             f"**GridShield preventive queue (top 10)**\n\n"
             f"• {len(top10)} assets addressed proactively\n"
             f"• {preventive_customers:,} customers protected\n"
-            f"• Estimated total intervention cost: {fmt_currency(total_preventive_cost)}"
+            f"• Estimated total intervention cost: {_md_currency(total_preventive_cost)}"
         )
 
     st.info(
         "**Key takeaway:** GridShield's priority queue places historically "
         f"incident-prone assets ({len(in_both)} of {len(in_both)+len(only_priority)}) "
         "in the top-10 *before* a failure occurs, while intervention costs "
-        f"({fmt_currency(total_preventive_cost)}) are a fraction of reactive costs "
-        f"({fmt_currency(est_cost_reactive)})."
+        f"({_md_currency(total_preventive_cost)}) are a fraction of reactive costs "
+        f"({_md_currency(est_cost_reactive)})."
     )
 
 

@@ -32,8 +32,8 @@ The `screenshots/` folder should contain at minimum:
 | `03-advisor-chat.png` | Tab 3 — Advisor responding to a comparison question with delta analysis |
 
 **To capture screenshots:**
-1. Launch the app: `python -m streamlit run src/app.py --server.port 8502`
-2. Open http://localhost:8502
+1. Launch the app: `python -m streamlit run src/app.py`
+2. Open http://localhost:8501
 3. Screenshot each tab and save to `demo/screenshots/` with the filenames above
 
 ---

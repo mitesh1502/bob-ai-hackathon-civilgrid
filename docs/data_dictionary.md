@@ -1,7 +1,7 @@
 # Data Dictionary — GridShield Datasets
 
 **Version:** v0.3  
-**Generator:** `gridshield/src/data/generate_data.py` (SEED=42)  
+**Generator:** `bob-ai-hackathon-gridshield/src/data/generate_data.py` (SEED=42)
 **Note:** All data is synthetic. No real utility, geographic, or personal data is included.
 
 ---

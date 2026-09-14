@@ -38,10 +38,10 @@ That is the complete install. There are no other dependencies for the primary St
 
 ```bash
 # From the submission root:
-python -m streamlit run src/app.py --server.port 8502
+python -m streamlit run src/app.py
 ```
 
-Open your browser at **http://localhost:8502**
+Open your browser at **http://localhost:8501**
 
 The app will detect whether `src/data/final_report.csv` already exists. If it does, the dashboard loads immediately. If not (fresh clone), use Option B first.
 
@@ -61,14 +61,14 @@ python src/scoring/priority_engine.py
 python src/recommendation/recommend.py
 
 # Step 5: Launch the app
-python -m streamlit run src/app.py --server.port 8502
+python -m streamlit run src/app.py
 ```
 
 Or run all four pipeline steps with the convenience runner:
 
 ```bash
 python src/pipeline.py
-python -m streamlit run src/app.py --server.port 8502
+python -m streamlit run src/app.py
 ```
 
 ### Option C — Windows one-click launcher
@@ -81,7 +81,7 @@ Double-click `src/scripts/run_demo.bat` from Windows Explorer. It checks Python,
 
 After launch, you should see:
 
-1. The browser opens at `http://localhost:8502`
+1. The browser opens at `http://localhost:8501`
 2. The sidebar shows **GridShield** with risk band legend
 3. **Tab 1 (Ranked Risk Table)** shows 40 assets, with A-02, A-04, A-05, A-06 in the top rows coloured red (CRITICAL)
 4. **Tab 2 (Asset Detail)** — select asset A-04 from the dropdown, confirm the Electrical sensor bars show non-zero values for thermal/vibration/PD
@@ -143,7 +143,7 @@ No environment variables are required. The file `src/.env.example` documents opt
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `STREAMLIT_SERVER_PORT` | 8502 | Override the default port |
+| `STREAMLIT_SERVER_PORT` | 8501 | Override the default port |
 | `WEATHER_API_KEY` | (none) | Future: connect to a live weather API |
 | `DATABASE_URL` | (none) | Future: connect to a PostgreSQL database |
 
@@ -160,7 +160,7 @@ Copy `src/.env.example` to `src/.env` and uncomment any line you want to use. Th
 | App shows blank/empty table | Same as above | Run `python src/pipeline.py` first |
 | Advisor returns "final_report.csv not found" | Pipeline not run, or DATA_DIR path mismatch | Run `python src/pipeline.py` from the submission root |
 | Tests fail with `ModuleNotFoundError: No module named 'scoring'` | sys.path not injected | Run as `python -m pytest src/tests/` (not `pytest tests/` alone) |
-| Port 8502 already in use | Another Streamlit instance running | Use `--server.port 8503` or stop the other instance |
+| Port 8501 already in use | Another Streamlit instance running | Use `--server.port 8502` or stop the other instance |
 | Windows: `python` not recognised | Python not on PATH | Reinstall Python, tick "Add Python to PATH" |
 | Windows: bat file closes immediately | Execution policy issue | Right-click → "Run as Administrator", or run `Set-ExecutionPolicy RemoteSigned` in PowerShell |
 | `streamlit_err.txt` says "address already in use" | Same as port conflict above | Change port or stop other instance |

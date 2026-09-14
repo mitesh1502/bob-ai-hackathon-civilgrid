@@ -1,4 +1,33 @@
-﻿# Python__pycache__/*.py[cod]*.pyo*.pyd*.egg-info/dist/build/.eggs/# Virtual environments.venv/venv/env/ENV/# Testing / Coverage.pytest_cache/.coveragehtmlcov/.tox/# Environment / Secrets.env.env.local.env.*.local*.pem*.keysecrets.*# Node.js (gridshield-mean bonus deliverable)src/gridshield-mean/backend/node_modules/src/gridshield-mean/frontend/node_modules/src/gridshield-mean/frontend/dist/src/gridshield-mean/frontend/.angular/src/gridshield-mean/frontend/.cache/# OS / Editor.DS_StoreThumbs.db*.swp*.swo.idea/.vscode/# Streamlit.streamlit/secrets.toml# Log / scratch filesstreamlit_out.txtstreamlit_err.txtgs_tests*.txtsmoke_final*.txtsmoke_err*.txt
+﻿# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
 
-# Generated data exports (not read by the Python app)
-src/data/_website_data.json
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Environment / secrets
+.env
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+# Streamlit runtime logs
+streamlit_out.txt
+streamlit_err.txt
