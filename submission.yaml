@@ -49,3 +49,28 @@ tests:
 bob_sessions: 5
 bob_defects_caught: 4
 bob_time_saved_hours: 22
+
+submission:
+  title: "GridShield — Civil-Engineering-Aware Power Grid Advisor"
+  problem_statement: >
+    Grid operators cannot determine which assets to inspect first because
+    electrical sensor data (temperature, vibration, partial discharge, oil
+    quality), civil-engineering condition data (drainage quality, corrosion
+    score, foundation tilt, erosion index), and 3-day weather forecasts are
+    tracked in separate silos with no unified view. The result is reactive,
+    calendar-based maintenance schedules that miss high-risk assets until
+    failure occurs, driving unnecessary outages, repair costs, and safety
+    incidents that targeted preventive action could have avoided.
+  solution_summary: >
+    GridShield fuses all three data streams into a transparent, rule-based
+    risk_score (0–100) built from 13 named, auditable factors. Assets are
+    then ranked by a priority_score calculated as expected outage cost
+    (customers × criticality × probability of failure) divided by
+    intervention cost, so operators know exactly which asset to fix first
+    and why — with no hidden model weights, no black-box outputs, and a
+    full per-factor breakdown available for every asset in the queue.
+  key_features:
+    - "Rule-based transparent scoring across 13 auditable factors (no black-box ML)"
+    - "Ranked asset priority queue under live weather scenarios and time horizons"
+    - "Conversational advisor chat for querying and comparing assets"
+    - "Stress-tested evaluation panel with Recall@Top-10 and loss-avoided metrics"
