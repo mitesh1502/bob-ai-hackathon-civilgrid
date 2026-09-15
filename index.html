@@ -6,6 +6,8 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <title>GridShield &mdash; Power Grid Advisor</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -139,6 +141,10 @@
   .stat-card .sl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
 
   hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+  #leaflet-map { width:100%; height:520px; border-radius:8px; z-index:0; }
+  .map-legend { display:flex; flex-wrap:wrap; gap:14px; margin-top:14px; }
+  .map-legend .ml-item { display:flex; align-items:center; gap:8px; font-size:0.84rem; }
+  .map-legend .ml-dot  { width:14px; height:14px; border-radius:50%; flex-shrink:0; }
 
   @media(max-width:700px) {
     #sidebar { display: none; }
@@ -161,6 +167,7 @@
     <a href="#" data-page="risk-table">&#128203; Risk Table</a>
     <a href="#" data-page="asset-detail">&#128269; Asset Detail</a>
     <a href="#" data-page="reactive">&#128201; Reactive vs Preventive</a>
+    <a href="#" data-page="grid-map">&#128506; Grid Map</a>
   </nav>
   <div class="band-legend">
     <p>Risk Bands</p>
@@ -311,6 +318,22 @@
 
 </div>
 
+  <section class="page" id="page-grid-map">
+    <div class="page-title">&#128506; Grid Map &mdash; Asset Locations</div>
+    <div class="advisory">&#9888; <strong>Advisory only</strong> &mdash; human approval required before any field action.</div>
+    <div class="page-caption">Interactive map of all 40 monitored assets across Mumbai metropolitan grid zones. Click any marker for asset detail.</div>
+    <div class="chart-wrap" style="padding:0;overflow:hidden;border-radius:8px;">
+      <div id="leaflet-map"></div>
+    </div>
+    <div class="map-legend">
+      <div class="ml-item"><div class="ml-dot" style="background:#c0392b"></div> Critical &ge;70</div>
+      <div class="ml-item"><div class="ml-dot" style="background:#e67e22"></div> Elevated 45&ndash;69</div>
+      <div class="ml-item"><div class="ml-dot" style="background:#d4a017"></div> Watch 20&ndash;44</div>
+      <div class="ml-item"><div class="ml-dot" style="background:#27ae60"></div> Normal &lt;20</div>
+    </div>
+    <footer>Made with IBM Bob &nbsp;&middot;&nbsp; GridShield &nbsp;&middot;&nbsp; IBM Bob AI Hackathon 2026</footer>
+  </section>
+
 <script>
 // ── DATA (from final_report.csv, SEED=42) ──
 const ASSETS = [
@@ -381,6 +404,7 @@ document.querySelectorAll('#sidebar nav a').forEach(a => {
     if (pg === 'asset-detail') renderDetail();
     if (pg === 'reactive')     renderReactive();
     if (pg === 'risk-table')   renderFullTable();
+    if (pg === 'grid-map')     initMap();
   });
 });
 
@@ -587,6 +611,57 @@ function renderReactive() {
       <td>${fmtCur(a.estimated_intervention_cost)}</td>
     </tr>`;
   }).join('');
+}
+
+// ── GRID MAP ──
+const ASSET_COORDS = {
+  "A-05":[18.9320,72.8250],"A-02":[19.0180,72.8520],"A-01":[18.9410,72.8310],
+  "A-03":[18.9360,72.8270],"A-06":[19.0250,72.8590],"A-04":[18.9480,72.8340],
+  "A-22":[18.9550,72.8280],"A-07":[19.0310,72.8470],"A-08":[19.0530,72.9020],
+  "A-12":[18.9490,72.8300],"A-21":[19.0920,72.8380],"A-14":[19.0350,73.0150],
+  "A-13":[19.0280,73.0080],"A-17":[19.0430,73.0220],"A-36":[19.0720,72.9180],
+  "A-15":[19.0380,73.0190],"A-28":[19.0480,73.0250],"A-35":[18.9600,72.8290],
+  "A-37":[19.0150,72.8600],"A-32":[19.0520,73.0310],"A-29":[19.1150,72.8420],
+  "A-19":[19.0460,73.0230],"A-40":[19.0120,72.8650],"A-20":[19.1080,72.8390],
+  "A-25":[19.1020,72.8450],"A-16":[19.0610,72.9150],"A-11":[18.9620,72.8320],
+  "A-09":[19.0290,73.0120],"A-27":[19.1110,72.8400],"A-24":[18.9580,72.8310],
+  "A-30":[19.0680,72.9200],"A-18":[19.0080,72.8560],"A-23":[19.1060,72.8460],
+  "A-34":[19.0090,72.8580],"A-31":[19.0060,72.8610],"A-26":[19.0410,73.0200],
+  "A-39":[19.0750,72.9220],"A-38":[19.0640,72.9160],"A-10":[19.1030,72.8430],
+  "A-33":[19.0410,73.0250]
+};
+const BAND_COLOR = {critical:'#c0392b',elevated:'#e67e22',watch:'#d4a017',normal:'#27ae60'};
+let _mapInited = false;
+function initMap() {
+  if (_mapInited) return;
+  _mapInited = true;
+  const map = L.map('leaflet-map').setView([19.0,72.88], 11);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 18,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+  }).addTo(map);
+  ASSETS.forEach(a => {
+    const coords = ASSET_COORDS[a.asset_id]; if (!coords) return;
+    const color  = BAND_COLOR[a.risk_band] || '#888';
+    const r      = a.risk_band === 'critical' ? 13 : a.risk_band === 'elevated' ? 11 : 9;
+    const marker = L.circleMarker(coords, {
+      radius: r, fillColor: color, color: '#fff',
+      weight: 2, opacity: 1, fillOpacity: 0.9
+    }).addTo(map);
+    marker.bindPopup(`
+      <div style="min-width:180px;font-family:-apple-system,sans-serif;font-size:13px">
+        <div style="font-weight:700;font-size:14px;margin-bottom:6px">${a.asset_id} &mdash; ${a.asset_type}</div>
+        <div><b>Band:</b> <span style="color:${color};font-weight:700">${a.risk_band.toUpperCase()}</span></div>
+        <div><b>Risk Score:</b> ${a.risk_score}</div>
+        <div><b>Cause:</b> ${a.dominant_cause.replace(/_/g,' ')}</div>
+        <div><b>Customers:</b> ${a.downstream_customers.toLocaleString()}</div>
+        <div><b>Feeder:</b> ${a.feeder_id}</div>
+        <div style="margin-top:8px">
+          <a href="#" onclick="openDetail('${a.asset_id}');return false;"
+             style="color:#3b82d4;font-weight:600;text-decoration:none">&#128269; View Detail</a>
+        </div>
+      </div>`);
+  });
 }
 
 // ── INIT ──
