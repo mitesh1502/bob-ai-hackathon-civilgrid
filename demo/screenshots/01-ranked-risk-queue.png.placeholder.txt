@@ -1,8 +1,8 @@
 PLACEHOLDER — replace with a real screenshot before submission.
 
 To capture this screenshot:
-1. Launch: python -m streamlit run src/app.py --server.port 8502
-2. Open http://localhost:8502
+1. Launch: python -m streamlit run src/app.py
+2. Open http://localhost:8501
 3. Tab 1 (Ranked Asset Priority Queue) should be visible by default
 4. Take a full-page browser screenshot showing:
    - At least the top 10 rows

@@ -32,9 +32,10 @@ project:
 
 entry_point:
   type: "streamlit"
-  command: "python -m streamlit run src/app.py --server.port 8502"
+  command: "python -m streamlit run src/app.py"
   working_directory: "bob-ai-hackathon-gridshield"
-  url: "http://localhost:8502"
+  url: "http://localhost:8501"
+  live_demo: "https://mitesh1502.github.io/bob-ai-hackathon-civilgrid/"
 
 dependencies:
   python: ">=3.10"

@@ -1,8 +1,8 @@
 PLACEHOLDER — replace with a real screenshot before submission.
 
 To capture this screenshot:
-1. Launch: python -m streamlit run src/app.py --server.port 8502
-2. Open http://localhost:8502
+1. Launch: python -m streamlit run src/app.py
+2. Open http://localhost:8501
 3. Click Tab 3 "Advisor Chat"
 4. In the text input, type: "Why is A-02 ranked above A-15?"
 5. Press Enter and wait for the response

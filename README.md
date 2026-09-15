@@ -60,10 +60,10 @@ pip install streamlit pandas
 
 ```bash
 # From the submission root:
-python -m streamlit run src/app.py --server.port 8502
+python -m streamlit run src/app.py
 ```
 
-App opens at **http://localhost:8502**
+App opens at **http://localhost:8501**
 
 The app auto-detects whether `final_report.csv` exists. If it does, the dashboard loads immediately. If not, click **"🔄 Rerun Full Pipeline"** in the sidebar.
 
@@ -97,7 +97,7 @@ src/scripts/run_demo.bat   ← double-click from Explorer
 | Resource | Location |
 |---|---|
 | Video walkthrough | See `demo/demo-video-link.txt` |
-| Live deployment | Not deployed — run locally |
+| Live demo (GitHub Pages) | https://mitesh1502.github.io/bob-ai-hackathon-civilgrid/ |
 | Static website preview | `demo/website-preview.html` (open in browser) |
 | Screenshots | `demo/screenshots/` |
 

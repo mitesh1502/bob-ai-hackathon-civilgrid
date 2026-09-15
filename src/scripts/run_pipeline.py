@@ -50,7 +50,7 @@ def main():
     print("|                                          |")
     print("|   Run:                                   |")
     print("|     python -m streamlit run src/app.py   |")
-    print("|     --server.port 8502                   |")
+    print("|     (opens at http://localhost:8501)       |")
     print("+==========================================+\n")
 
 
