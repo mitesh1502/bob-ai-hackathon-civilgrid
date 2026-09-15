@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>GridShield &mdash; Power Grid Advisor</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #f7f8fa;
+    --surface: #ffffff;
+    --border: #e5e7eb;
+    --text: #1f2328;
+    --muted: #57606a;
+    --accent: #3b82d4;
+    --critical: #c0392b;
+    --elevated: #e67e22;
+    --watch: #d4a017;
+    --normal: #27ae60;
+    --critical-tint: #fde8e6;
+    --elevated-tint: #fef3e6;
+    --watch-tint: #fefce6;
+    --normal-tint: #eafaf1;
+    --sidebar-w: 220px;
+  }
+  html { font-size: 14px; }
+  body { font-family: -apple-system,"Segoe UI",system-ui,sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; display: flex; min-height: 100vh; }
+
+  /* Sidebar */
+  #sidebar {
+    width: var(--sidebar-w); min-width: var(--sidebar-w); background: #1a202c; color: #e2e8f0;
+    display: flex; flex-direction: column; padding: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+  }
+  #sidebar .brand { padding: 20px 18px 12px; border-bottom: 1px solid #2d3748; }
+  #sidebar .brand h1 { font-size: 1.2rem; color: #fff; font-weight: 700; }
+  #sidebar .brand p { font-size: 0.75rem; color: #a0aec0; margin-top: 3px; }
+  #sidebar nav { padding: 12px 0; flex: 1; }
+  #sidebar nav a {
+    display: block; padding: 9px 18px; color: #a0aec0; text-decoration: none; font-size: 0.88rem;
+    border-left: 3px solid transparent; transition: background 0.15s, color 0.15s;
+  }
+  #sidebar nav a:hover, #sidebar nav a.active { background: #2d3748; color: #fff; border-left-color: var(--accent); }
+  .band-legend { padding: 12px 18px; border-top: 1px solid #2d3748; }
+  .band-legend p { font-size: 0.72rem; color: #718096; margin-bottom: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: .05em; }
+  .band-legend .bl { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; font-size: 0.78rem; color: #a0aec0; }
+  .band-legend .dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+  .sidebar-note { padding: 12px 18px; border-top: 1px solid #2d3748; font-size: 0.72rem; color: #718096; line-height: 1.5; }
+
+  /* Main */
+  #main { flex: 1; overflow-x: hidden; }
+  .page { display: none; padding: 28px 32px 48px; max-width: 1200px; }
+  .page.active { display: block; }
+
+  /* Page header */
+  .page-title { font-size: 1.5rem; font-weight: 700; margin-bottom: 4px; }
+  .page-caption { color: var(--muted); font-size: 0.88rem; margin-bottom: 22px; }
+
+  /* Hero banner */
+  .hero { background: linear-gradient(135deg,#1a202c 0%,#2d3748 100%); color: #fff; padding: 28px 32px; margin-bottom: 24px; border-radius: 8px; }
+  .hero h2 { font-size: 1.7rem; font-weight: 800; }
+  .hero p { font-size: 0.9rem; color: #a0aec0; margin-top: 6px; }
+
+  /* Advisory badge */
+  .advisory { background: #3b1f00; border: 1px solid #e67e22; color: #fde8c8; padding: 8px 14px; border-radius: 4px; font-size: 0.82em; margin-bottom: 16px; }
+
+  /* KPI cards */
+  .kpi-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(160px,1fr)); gap: 14px; margin-bottom: 24px; }
+  .kpi { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 16px 18px; }
+  .kpi .val { font-size: 2rem; font-weight: 800; line-height: 1; }
+  .kpi .lbl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+  .kpi.red .val { color: var(--critical); }
+  .kpi.orange .val { color: var(--elevated); }
+  .kpi.green .val { color: var(--normal); }
+  .kpi.blue .val { color: var(--accent); }
+
+  /* Table */
+  .table-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; overflow: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.84rem; }
+  thead th { background: #f0f2f5; padding: 9px 12px; text-align: left; font-weight: 600; border-bottom: 1px solid var(--border); white-space: nowrap; cursor: pointer; user-select: none; }
+  thead th:hover { background: #e5e7eb; }
+  tbody tr { border-bottom: 1px solid var(--border); cursor: pointer; transition: filter .1s; }
+  tbody tr:hover { filter: brightness(0.96); }
+  tbody td { padding: 7px 12px; white-space: nowrap; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.78rem; font-weight: 700; color: #fff; }
+  .badge.critical { background: var(--critical); }
+  .badge.elevated { background: var(--elevated); }
+  .badge.watch { background: var(--watch); color: #1a1a1a; }
+  .badge.normal { background: var(--normal); }
+  .tier-badge { display: inline-block; padding: 1px 7px; border-radius: 3px; font-size: 0.75rem; font-weight: 600; }
+  .tier-badge.immediate { background: #fde8e6; color: var(--critical); }
+  .tier-badge.scheduled { background: #fef3e6; color: var(--elevated); }
+  .tier-badge.monitor   { background: #eafaf1; color: var(--normal); }
+
+  /* Filter bar */
+  .filter-bar { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 14px; align-items: center; }
+  .filter-bar label { font-size: 0.82rem; color: var(--muted); }
+  .filter-bar select, .filter-bar input { padding: 5px 9px; border: 1px solid var(--border); border-radius: 6px; font-size: 0.82rem; background: var(--surface); color: var(--text); }
+  .filter-bar input[type=text] { width: 160px; }
+
+  /* Asset detail */
+  .metric-row { display: grid; grid-template-columns: repeat(auto-fit,minmax(150px,1fr)); gap: 14px; margin-bottom: 18px; }
+  .metric { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; }
+  .metric .mv { font-size: 1.4rem; font-weight: 700; }
+  .metric .ml { font-size: 0.76rem; color: var(--muted); margin-top: 3px; }
+  .detail-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; }
+  .detail-card h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 10px; }
+  .action-card { border-left: 4px solid #888; padding: 12px 16px; background: #f8f9fa; border-radius: 4px; font-size: 0.85rem; line-height: 1.6; }
+  .action-card.immediate { border-left-color: var(--critical); }
+  .action-card.scheduled { border-left-color: var(--elevated); }
+  .action-card.monitor   { border-left-color: var(--normal); }
+  .safety-box { background: #fff8e1; border: 1px solid #f9ca24; border-radius: 6px; padding: 12px 16px; font-size: 0.82rem; color: #7d5a00; line-height: 1.6; margin-top: 14px; }
+
+  /* Bar chart */
+  .chart-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 18px 20px; margin-bottom: 16px; overflow: auto; }
+  .chart-wrap h3 { font-size: 0.95rem; font-weight: 700; margin-bottom: 14px; }
+  .bar-row { display: flex; align-items: center; margin-bottom: 7px; }
+  .bar-label { width: 130px; font-size: 0.78rem; color: var(--muted); text-align: right; padding-right: 10px; flex-shrink: 0; }
+  .bar-track { flex: 1; background: #f0f2f5; border-radius: 4px; height: 18px; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+  .bar-fill.civil { background: var(--accent); }
+  .bar-fill.elec  { background: #e67e22; }
+  .bar-val { width: 48px; font-size: 0.78rem; color: var(--muted); padding-left: 8px; text-align: left; flex-shrink: 0; }
+  .chart-section-label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 10px 0 6px 0; padding-left: 140px; }
+
+  /* Reactive vs Preventive */
+  .compare-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .compare-box { border-radius: 8px; padding: 18px 20px; }
+  .compare-box.reactive   { background: #fde8e6; border: 1px solid #e74c3c; }
+  .compare-box.preventive { background: #eafaf1; border: 1px solid #27ae60; }
+  .compare-box h3 { font-size: 1rem; font-weight: 700; margin-bottom: 10px; }
+  .compare-box p { font-size: 0.84rem; margin-bottom: 4px; }
+  .info-box { background: #e8f4fd; border: 1px solid var(--accent); border-radius: 8px; padding: 14px 18px; font-size: 0.86rem; color: #1a4a7a; line-height: 1.6; margin-bottom: 18px; }
+  .stat-cards { display: grid; grid-template-columns: repeat(3,1fr); gap: 14px; margin-bottom: 20px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; text-align: center; }
+  .stat-card .sv { font-size: 2rem; font-weight: 800; color: var(--accent); }
+  .stat-card .sl { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+  hr { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+  @media(max-width:700px) {
+    #sidebar { display: none; }
+    .compare-cols { grid-template-columns: 1fr; }
+    .stat-cards { grid-template-columns: 1fr 1fr; }
+  }
+
+  footer { border-top: 1px solid var(--border); padding: 16px 32px; text-align: center; font-size: 0.75rem; color: var(--muted); margin-top: 32px; }
+</style>
+</head>
+<body>
+
+<aside id="sidebar">
+  <div class="brand">
+    <h1>&#9889; GridShield</h1>
+    <p>Civil-Engineering-Aware<br>Power Grid Advisor</p>
+  </div>
+  <nav>
+    <a href="#" class="active" data-page="dashboard">&#128202; Dashboard</a>
+    <a href="#" data-page="risk-table">&#128203; Risk Table</a>
+    <a href="#" data-page="asset-detail">&#128269; Asset Detail</a>
+    <a href="#" data-page="reactive">&#128201; Reactive vs Preventive</a>
+  </nav>
+  <div class="band-legend">
+    <p>Risk Bands</p>
+    <div class="bl"><div class="dot" style="background:#c0392b"></div> Critical &ge;70</div>
+    <div class="bl"><div class="dot" style="background:#e67e22"></div> Elevated 45&ndash;69</div>
+    <div class="bl"><div class="dot" style="background:#d4a017"></div> Watch 20&ndash;44</div>
+    <div class="bl"><div class="dot" style="background:#27ae60"></div> Normal &lt;20</div>
+  </div>
+  <div class="sidebar-note">All recommendations are advisory only. No field work authorised without engineer sign-off.</div>
+</aside>
+
+<div id="main">
+
+<!-- DASHBOARD -->
+<section class="page active" id="page-dashboard">
+  <div class="hero">
+    <h2>&#9889; GridShield</h2>
+    <p>Civil-Engineering-Aware Power Grid Advisor &nbsp;|&nbsp; IBM Bob AI Hackathon 2026 &nbsp;|&nbsp; Challenge U1: Power Outage Prediction &amp; Grid Equipment Failure Advisor</p>
+  </div>
+  <div class="advisory">&#9888; <strong>Advisory only &mdash; human approval required</strong> before any field action. Model v0.3 &middot; Scenario: Storm Alpha (Severe) &middot; Horizon: 72h</div>
+  <div class="kpi-row" id="kpi-row"></div>
+  <div class="page-caption" style="margin-bottom:10px">Top 10 assets by priority score &mdash; click any row for full detail.</div>
+  <div class="table-wrap">
+    <table id="top10-table">
+      <thead>
+        <tr>
+          <th>#</th><th>Asset</th><th>Type</th><th>Band</th>
+          <th>Risk</th><th>Priority</th><th>Dominant Cause</th>
+          <th>Critical Load</th><th>Customers</th><th>Tier</th>
+        </tr>
+      </thead>
+      <tbody id="top10-body"></tbody>
+    </table>
+  </div>
+  <footer>Made with IBM Bob &nbsp;&middot;&nbsp; GridShield &nbsp;&middot;&nbsp; IBM Bob AI Hackathon 2026</footer>
+</section>
+
+<!-- RISK TABLE -->
+<section class="page" id="page-risk-table">
+  <div class="page-title">&#128203; Ranked Asset Priority Queue</div>
+  <div class="advisory">&#9888; <strong>Advisory only</strong> &mdash; human approval required before any field action.</div>
+  <div class="page-caption">Assets ranked by priority_score (expected loss &divide; intervention cost). Click column headers to sort.</div>
+  <div class="filter-bar">
+    <label>Band:
+      <select id="filter-band">
+        <option value="all">All bands</option>
+        <option value="critical">Critical</option>
+        <option value="elevated">Elevated</option>
+        <option value="watch">Watch</option>
+        <option value="normal">Normal</option>
+      </select>
+    </label>
+    <label>Type:
+      <select id="filter-type">
+        <option value="all">All types</option>
+        <option value="pole">Pole</option>
+        <option value="transformer">Transformer</option>
+        <option value="substation">Substation</option>
+      </select>
+    </label>
+    <label>Feeder:
+      <select id="filter-feeder">
+        <option value="all">All feeders</option>
+      </select>
+    </label>
+    <label>Search: <input type="text" id="filter-search" placeholder="Asset ID..." /></label>
+  </div>
+  <div class="table-wrap">
+    <table id="full-table">
+      <thead>
+        <tr>
+          <th data-col="asset_id">Asset &#8597;</th>
+          <th data-col="asset_type">Type &#8597;</th>
+          <th data-col="risk_band">Band &#8597;</th>
+          <th data-col="risk_score">Risk &#8597;</th>
+          <th data-col="priority_score">Priority &#8597;</th>
+          <th data-col="expected_loss">Exp. Loss &#8597;</th>
+          <th data-col="estimated_intervention_cost">Cost &#8597;</th>
+          <th data-col="dominant_cause">Cause &#8597;</th>
+          <th data-col="action_tier">Tier &#8597;</th>
+          <th data-col="downstream_customers">Customers &#8597;</th>
+        </tr>
+      </thead>
+      <tbody id="full-body"></tbody>
+    </table>
+  </div>
+  <div id="table-count" style="margin-top:8px;font-size:0.8rem;color:var(--muted)"></div>
+  <footer>Made with IBM Bob &nbsp;&middot;&nbsp; GridShield &nbsp;&middot;&nbsp; IBM Bob AI Hackathon 2026</footer>
+</section>
+
+<!-- ASSET DETAIL -->
+<section class="page" id="page-asset-detail">
+  <div class="page-title">&#128269; Asset Detail</div>
+  <div class="advisory">&#9888; <strong>Advisory only</strong> &mdash; human approval required before any field action.</div>
+  <div style="margin-bottom:18px">
+    <label style="font-size:0.85rem;color:var(--muted);display:block;margin-bottom:5px">Select asset:</label>
+    <select id="asset-select" style="padding:7px 12px;border:1px solid var(--border);border-radius:6px;font-size:0.9rem;background:var(--surface);color:var(--text);min-width:200px"></select>
+  </div>
+  <div class="metric-row" id="detail-metrics"></div>
+  <div class="detail-card" id="detail-info"></div>
+  <div class="chart-wrap">
+    <h3>&#128200; Risk Score Breakdown (Contributing Factors)</h3>
+    <div id="factor-chart"></div>
+    <p id="factor-caption" style="font-size:0.78rem;color:var(--muted);margin-top:8px"></p>
+  </div>
+  <div class="detail-card">
+    <h3>&#128203; Recommended Action</h3>
+    <div id="detail-action" class="action-card"></div>
+    <p id="detail-crew" style="margin-top:10px;font-size:0.84rem"></p>
+    <p id="detail-reduction" style="font-size:0.84rem"></p>
+    <div class="safety-box">&#9888; <strong>SAFETY NOTE</strong><br>ADVISORY ONLY &mdash; This system does not authorise any field work. No switching, breaker operation, energisation, de-energisation, excavation, or work on or near live equipment is permitted without a written work order reviewed and signed off by a qualified licensed engineer.</div>
+  </div>
+  <footer>Made with IBM Bob &nbsp;&middot;&nbsp; GridShield &nbsp;&middot;&nbsp; IBM Bob AI Hackathon 2026</footer>
+</section>
+
+<!-- REACTIVE VS PREVENTIVE -->
+<section class="page" id="page-reactive">
+  <div class="page-title">&#128201; Reactive vs Preventive Comparison</div>
+  <div class="advisory">&#9888; <strong>Advisory only</strong> &mdash; human approval required before any field action.</div>
+  <div class="page-caption">Comparing historically incident-prone assets against the current top-10 priority queue.</div>
+  <div class="stat-cards" id="stat-cards"></div>
+  <div class="compare-cols">
+    <div class="compare-box reactive">
+      <h3>&#128308; Reactive Approach (Historical)</h3>
+      <div id="reactive-stats"></div>
+    </div>
+    <div class="compare-box preventive">
+      <h3>&#128994; GridShield Preventive Queue (Top 10)</h3>
+      <div id="preventive-stats"></div>
+    </div>
+  </div>
+  <div class="info-box" id="key-takeaway"></div>
+  <div class="page-caption" style="margin-bottom:8px">Top-10 priority assets with incident history cross-reference:</div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Asset</th><th>Band</th><th>Risk</th><th>Priority</th>
+          <th>Cause</th><th>Critical Load</th><th>Customers</th>
+          <th>Past Incident?</th><th>Intervention Cost</th>
+        </tr>
+      </thead>
+      <tbody id="reactive-body"></tbody>
+    </table>
+  </div>
+  <footer>Made with IBM Bob &nbsp;&middot;&nbsp; GridShield &nbsp;&middot;&nbsp; IBM Bob AI Hackathon 2026</footer>
+</section>
+
+</div>
+
+<script>
+// ── DATA (from final_report.csv, SEED=42) ──
+const ASSETS = [
+  {asset_id:"A-05",asset_type:"pole",age_years:33,material:"wood",risk_score:70.0,dominant_cause:"flood_drainage",risk_band:"critical",priority_score:85.810333,expected_loss:217630.0,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset. Check for evidence of scour or foundation undermining; photograph and report. Apply temporary erosion-control measures (sandbags, geotextile) if scour is observed. Stage dewatering equipment if significant flooding is forecast. Defer foundation stabilisation work until water has receded and site is safe.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"shelter",downstream_customers:3109,feeder_id:"F-101",factor_wind:10.5,factor_rain:13.96,factor_tilt:15.0,factor_erosion:13.29,factor_corrosion:6.0,factor_drainage:4.75,factor_vegetation:3.75,factor_age:2.74,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-02",asset_type:"transformer",age_years:41,material:"steel",risk_score:100.0,dominant_cause:"flood_drainage",risk_band:"critical",priority_score:79.158333,expected_loss:201000.0,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset. Check for evidence of scour or foundation undermining; photograph and report. Apply temporary erosion-control measures (sandbags, geotextile) if scour is observed. Stage dewatering equipment if significant flooding is forecast. Defer foundation stabilisation work until water has receded and site is safe.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:1608,feeder_id:"F-101",factor_wind:13.5,factor_rain:13.2,factor_tilt:10.5,factor_erosion:12.0,factor_corrosion:9.43,factor_drainage:7.25,factor_vegetation:11.62,factor_age:5.05,factor_thermal:17.6,factor_vibration:10.29,factor_partial_dc:14.56,factor_oil:7.6,factor_overload:10.35},
+  {asset_id:"A-01",asset_type:"pole",age_years:38,material:"wood",risk_score:75.4,dominant_cause:"flood_drainage",risk_band:"critical",priority_score:44.790033,expected_loss:115079.25,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset. Check for evidence of scour or foundation undermining; photograph and report. Apply temporary erosion-control measures (sandbags, geotextile) if scour is observed. Stage dewatering equipment if significant flooding is forecast. Defer foundation stabilisation work until water has receded and site is safe.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:1221,feeder_id:"F-100",factor_wind:8.25,factor_rain:16.67,factor_tilt:12.0,factor_erosion:11.57,factor_corrosion:7.71,factor_drainage:6.0,factor_vegetation:9.0,factor_age:4.23,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-03",asset_type:"pole",age_years:35,material:"wood",risk_score:65.7,dominant_cause:"wind_foundation",risk_band:"elevated",priority_score:40.858113,expected_loss:343348.2,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt. Arrange engineer-verified bracing assessment; if tilt exceeds safe tolerance, prepare replacement materials and stage crew for post-storm intervention. Do NOT approach or touch the structure during active high-wind conditions.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"hospital",downstream_customers:3484,feeder_id:"F-100",factor_wind:11.2,factor_rain:11.63,factor_tilt:13.88,factor_erosion:7.29,factor_corrosion:4.71,factor_drainage:1.75,factor_vegetation:12.0,factor_age:3.25,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-06",asset_type:"transformer",age_years:29,material:"steel",risk_score:100.0,dominant_cause:"insulation_degradation",risk_band:"critical",priority_score:35.3012,expected_loss:505350.0,estimated_intervention_cost:10000,recommended_action:"ADVISORY: Elevated partial-discharge count and/or oil quality degradation detected — indicative of insulation system stress. Arrange urgent oil sampling and DGA (dissolved gas analysis) by a qualified high-voltage engineer before next scheduled maintenance window. Initiate condition-based maintenance review; if DGA confirms thermal fault or arcing gases, escalate to emergency replacement planning. No live work on insulation systems is permitted without full isolation, earthing, and sign-off by a qualified licensed engineer.",action_tier:"immediate",expected_risk_reduction_pct:72,recommended_crew_type:"HV-qualified engineer + oil sampling specialist",critical_loads:"hospital",downstream_customers:3369,feeder_id:"F-101",factor_wind:15.5,factor_rain:15.32,factor_tilt:9.0,factor_erosion:10.29,factor_corrosion:3.43,factor_drainage:4.0,factor_vegetation:4.12,factor_age:2.27,factor_thermal:14.91,factor_vibration:8.57,factor_partial_dc:14.9,factor_oil:9.0,factor_overload:10.25},
+  {asset_id:"A-04",asset_type:"substation",age_years:44,material:"steel",risk_score:100.0,dominant_cause:"insulation_degradation",risk_band:"critical",priority_score:23.1944,expected_loss:337200.0,estimated_intervention_cost:10000,recommended_action:"ADVISORY: Elevated partial-discharge count and/or oil quality degradation detected — indicative of insulation system stress. Arrange urgent oil sampling and DGA (dissolved gas analysis) by a qualified high-voltage engineer before next scheduled maintenance window. Initiate condition-based maintenance review; if DGA confirms thermal fault or arcing gases, escalate to emergency replacement planning. No live work on insulation systems is permitted without full isolation, earthing, and sign-off by a qualified licensed engineer.",action_tier:"immediate",expected_risk_reduction_pct:72,recommended_crew_type:"HV-qualified engineer + oil sampling specialist",critical_loads:"shelter",downstream_customers:3372,feeder_id:"F-100",factor_wind:12.75,factor_rain:7.55,factor_tilt:7.87,factor_erosion:13.29,factor_corrosion:10.71,factor_drainage:7.0,factor_vegetation:12.0,factor_age:6.09,factor_thermal:13.94,factor_vibration:10.29,factor_partial_dc:12.78,factor_oil:8.4,factor_overload:10.67},
+  {asset_id:"A-22",asset_type:"pole",age_years:6,material:"wood",risk_score:8.1,dominant_cause:"vegetation",risk_band:"normal",priority_score:5.394063,expected_loss:8808.75,estimated_intervention_cost:800,recommended_action:"Arrange targeted vegetation trimming to restore safe conductor clearance. Inspect conductor for signs of abrasion or tracking damage after trimming. Log encroaching tree species and height for future vegetation-management schedule.",action_tier:"scheduled",expected_risk_reduction_pct:60,recommended_crew_type:"Qualified arborist with utility clearance certification",critical_loads:"hospital",downstream_customers:725,feeder_id:"F-100",factor_wind:0,factor_rain:1.35,factor_tilt:1.12,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:5.62,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-07",asset_type:"transformer",age_years:22,material:"steel",risk_score:58.9,dominant_cause:"insulation_degradation",risk_band:"elevated",priority_score:4.95914,expected_loss:83932.5,estimated_intervention_cost:10000,recommended_action:"ADVISORY: Elevated partial-discharge count and/or oil quality degradation detected — indicative of insulation system stress. Arrange urgent oil sampling and DGA (dissolved gas analysis) by a qualified high-voltage engineer before next scheduled maintenance window.",action_tier:"immediate",expected_risk_reduction_pct:72,recommended_crew_type:"HV-qualified engineer + oil sampling specialist",critical_loads:"hospital",downstream_customers:950,feeder_id:"F-101",factor_wind:0,factor_rain:4.38,factor_tilt:0,factor_erosion:2.57,factor_corrosion:0,factor_drainage:0,factor_vegetation:4.5,factor_age:0.4,factor_thermal:12.4,factor_vibration:6.17,factor_partial_dc:12.7,factor_oil:7.0,factor_overload:8.8},
+  {asset_id:"A-08",asset_type:"substation",age_years:18,material:"steel",risk_score:61.1,dominant_cause:"insulation_degradation",risk_band:"elevated",priority_score:4.824126,expected_loss:82057.3,estimated_intervention_cost:10000,recommended_action:"ADVISORY: Elevated partial-discharge count and/or oil quality degradation detected — indicative of insulation system stress. Arrange urgent oil sampling and DGA (dissolved gas analysis) by a qualified high-voltage engineer before next scheduled maintenance window.",action_tier:"immediate",expected_risk_reduction_pct:72,recommended_crew_type:"HV-qualified engineer + oil sampling specialist",critical_loads:"shelter",downstream_customers:1343,feeder_id:"F-103",factor_wind:0,factor_rain:3.6,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:15.31,factor_vibration:10.63,factor_partial_dc:11.7,factor_oil:9.2,factor_overload:10.62},
+  {asset_id:"A-12",asset_type:"pole",age_years:3,material:"concrete",risk_score:9.8,dominant_cause:"vegetation",risk_band:"normal",priority_score:3.598075,expected_loss:6414.1,estimated_intervention_cost:800,recommended_action:"Arrange targeted vegetation trimming to restore safe conductor clearance. Inspect conductor for signs of abrasion or tracking damage after trimming.",action_tier:"scheduled",expected_risk_reduction_pct:60,recommended_crew_type:"Qualified arborist with utility clearance certification",critical_loads:"none",downstream_customers:1309,feeder_id:"F-100",factor_wind:0,factor_rain:2.54,factor_tilt:2.25,factor_erosion:0,factor_corrosion:0,factor_drainage:0.5,factor_vegetation:4.5,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-21",asset_type:"substation",age_years:19,material:"wood",risk_score:5.6,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:3.596733,expected_loss:12096.0,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"hospital",downstream_customers:1440,feeder_id:"F-102",factor_wind:0,factor_rain:5.6,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-14",asset_type:"transformer",age_years:10,material:"concrete",risk_score:6.7,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:3.394733,expected_loss:11591.0,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:1384,feeder_id:"F-104",factor_wind:0,factor_rain:5.18,factor_tilt:1.5,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-13",asset_type:"pole",age_years:8,material:"concrete",risk_score:5.3,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:2.526633,expected_loss:9420.75,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"hospital",downstream_customers:1185,feeder_id:"F-104",factor_wind:0,factor_rain:5.35,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-17",asset_type:"pole",age_years:11,material:"concrete",risk_score:6.1,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:1.270925,expected_loss:6281.47,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:1373,feeder_id:"F-104",factor_wind:0,factor_rain:1.6,factor_tilt:3.0,factor_erosion:0,factor_corrosion:0,factor_drainage:1.5,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-36",asset_type:"substation",age_years:8,material:"concrete",risk_score:4.6,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:1.150333,expected_loss:5980.0,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"shelter",downstream_customers:1300,feeder_id:"F-103",factor_wind:0,factor_rain:4.2,factor_tilt:0.38,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-15",asset_type:"substation",age_years:23,material:"concrete",risk_score:3.6,dominant_cause:"vegetation",risk_band:"normal",priority_score:0.8611,expected_loss:2764.8,estimated_intervention_cost:800,recommended_action:"Arrange targeted vegetation trimming to restore safe conductor clearance.",action_tier:"scheduled",expected_risk_reduction_pct:60,recommended_crew_type:"Qualified arborist with utility clearance certification",critical_loads:"water_treatment",downstream_customers:1024,feeder_id:"F-104",factor_wind:0,factor_rain:1.15,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:1.88,factor_age:0.6,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-28",asset_type:"substation",age_years:3,material:"steel",risk_score:13.4,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:0.836558,expected_loss:15899.1,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"hospital",downstream_customers:791,feeder_id:"F-104",factor_wind:0,factor_rain:0.45,factor_tilt:4.87,factor_erosion:4.29,factor_corrosion:0,factor_drainage:0,factor_vegetation:3.75,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-35",asset_type:"pole",age_years:13,material:"wood",risk_score:3.7,dominant_cause:"vegetation",risk_band:"normal",priority_score:0.271012,expected_loss:1978.02,estimated_intervention_cost:800,recommended_action:"Arrange targeted vegetation trimming to restore safe conductor clearance.",action_tier:"scheduled",expected_risk_reduction_pct:60,recommended_crew_type:"Qualified arborist with utility clearance certification",critical_loads:"shelter",downstream_customers:891,feeder_id:"F-100",factor_wind:0.55,factor_rain:1.27,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:1.88,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-37",asset_type:"transformer",age_years:7,material:"wood",risk_score:7.3,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:0.168096,expected_loss:10429.88,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"water_treatment",downstream_customers:1143,feeder_id:"F-101",factor_wind:0,factor_rain:1.3,factor_tilt:3.75,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:2.25,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-32",asset_type:"pole",age_years:5,material:"steel",risk_score:6.0,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:0.163833,expected_loss:10395.0,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"hospital",downstream_customers:1155,feeder_id:"F-104",factor_wind:0,factor_rain:1.05,factor_tilt:4.5,factor_erosion:0,factor_corrosion:0,factor_drainage:0.5,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-29",asset_type:"transformer",age_years:15,material:"wood",risk_score:15.6,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:-0.108049,expected_loss:8170.5,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"water_treatment",downstream_customers:419,feeder_id:"F-102",factor_wind:7.9,factor_rain:0.78,factor_tilt:0,factor_erosion:4.71,factor_corrosion:0,factor_drainage:0,factor_vegetation:2.25,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-19",asset_type:"substation",age_years:6,material:"wood",risk_score:1.9,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.177667,expected_loss:2660.0,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:1120,feeder_id:"F-104",factor_wind:0,factor_rain:1.18,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0.75,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-40",asset_type:"substation",age_years:10,material:"concrete",risk_score:3.5,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.440167,expected_loss:2003.75,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:458,feeder_id:"F-101",factor_wind:0,factor_rain:3.52,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-20",asset_type:"pole",age_years:23,material:"wood",risk_score:4.9,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.62525,expected_loss:1541.05,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"none",downstream_customers:629,feeder_id:"F-102",factor_wind:2.05,factor_rain:0.93,factor_tilt:0,factor_erosion:1.29,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0.6,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-25",asset_type:"pole",age_years:19,material:"steel",risk_score:9.3,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:-0.631653,expected_loss:3886.47,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"none",downstream_customers:1393,feeder_id:"F-102",factor_wind:3.65,factor_rain:0.4,factor_tilt:3.0,factor_erosion:0,factor_corrosion:0,factor_drainage:2.25,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-16",asset_type:"transformer",age_years:22,material:"concrete",risk_score:9.1,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.671642,expected_loss:1425.06,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"shelter",downstream_customers:261,feeder_id:"F-103",factor_wind:0,factor_rain:5.35,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:3.38,factor_age:0.4,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-11",asset_type:"pole",age_years:10,material:"wood",risk_score:6.5,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:-0.722949,expected_loss:3139.5,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"shelter",downstream_customers:805,feeder_id:"F-100",factor_wind:0,factor_rain:0.85,factor_tilt:5.62,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-09",asset_type:"transformer",age_years:20,material:"steel",risk_score:48.0,dominant_cause:"insulation_degradation",risk_band:"elevated",priority_score:-0.741856,expected_loss:4752.0,estimated_intervention_cost:10000,recommended_action:"ADVISORY: Elevated partial-discharge count and/or oil quality degradation detected — indicative of insulation system stress.",action_tier:"immediate",expected_risk_reduction_pct:72,recommended_crew_type:"HV-qualified engineer + oil sampling specialist",critical_loads:"shelter",downstream_customers:165,feeder_id:"F-104",factor_wind:0,factor_rain:2.72,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:10.91,factor_vibration:7.2,factor_partial_dc:9.02,factor_oil:8.0,factor_overload:10.1},
+  {asset_id:"A-27",asset_type:"pole",age_years:20,material:"concrete",risk_score:2.6,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.756508,expected_loss:1212.9,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"hospital",downstream_customers:311,feeder_id:"F-102",factor_wind:0,factor_rain:1.45,factor_tilt:1.12,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-24",asset_type:"transformer",age_years:8,material:"wood",risk_score:0.7,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.806617,expected_loss:1087.62,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:1243,feeder_id:"F-100",factor_wind:0,factor_rain:0.68,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-30",asset_type:"pole",age_years:4,material:"wood",risk_score:7.1,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:-0.818349,expected_loss:2358.97,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"water_treatment",downstream_customers:443,feeder_id:"F-103",factor_wind:6.0,factor_rain:1.07,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-18",asset_type:"transformer",age_years:21,material:"concrete",risk_score:1.3,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.851925,expected_loss:974.35,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"none",downstream_customers:1499,feeder_id:"F-101",factor_wind:0,factor_rain:1.12,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0.2,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-23",asset_type:"transformer",age_years:5,material:"concrete",risk_score:1.3,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.873767,expected_loss:919.75,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"water_treatment",downstream_customers:566,feeder_id:"F-102",factor_wind:0,factor_rain:1.32,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-34",asset_type:"substation",age_years:6,material:"wood",risk_score:3.5,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:-0.882084,expected_loss:1837.5,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"water_treatment",downstream_customers:420,feeder_id:"F-101",factor_wind:2.3,factor_rain:1.2,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-31",asset_type:"transformer",age_years:4,material:"concrete",risk_score:14.5,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:-0.885493,expected_loss:1809.6,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"shelter",downstream_customers:208,feeder_id:"F-101",factor_wind:6.95,factor_rain:0.45,factor_tilt:3.75,factor_erosion:3.0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0.38,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-26",asset_type:"transformer",age_years:7,material:"concrete",risk_score:3.9,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.893783,expected_loss:869.7,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"shelter",downstream_customers:223,feeder_id:"F-104",factor_wind:0,factor_rain:1.9,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:2.0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-39",asset_type:"substation",age_years:10,material:"concrete",risk_score:5.4,dominant_cause:"wind_foundation",risk_band:"normal",priority_score:-0.899756,expected_loss:1692.9,estimated_intervention_cost:4500,recommended_action:"Conduct urgent visual inspection of foundation integrity and structural tilt.",action_tier:"immediate",expected_risk_reduction_pct:55,recommended_crew_type:"Structural/civil engineer + two-person utility crew",critical_loads:"none",downstream_customers:627,feeder_id:"F-103",factor_wind:0,factor_rain:1.3,factor_tilt:3.37,factor_erosion:0,factor_corrosion:0,factor_drainage:0.75,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-38",asset_type:"pole",age_years:9,material:"steel",risk_score:1.6,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.955583,expected_loss:715.2,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"shelter",downstream_customers:447,feeder_id:"F-103",factor_wind:0,factor_rain:1.64,factor_tilt:0,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-10",asset_type:"transformer",age_years:13,material:"wood",risk_score:2.3,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-0.96705,expected_loss:686.55,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"none",downstream_customers:995,feeder_id:"F-102",factor_wind:0,factor_rain:1.02,factor_tilt:0,factor_erosion:1.29,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0},
+  {asset_id:"A-33",asset_type:"transformer",age_years:8,material:"wood",risk_score:2.0,dominant_cause:"flood_drainage",risk_band:"normal",priority_score:-1.16535,expected_loss:190.8,estimated_intervention_cost:1200,recommended_action:"Inspect and clear all blocked drainage channels within 10 m of the asset.",action_tier:"scheduled",expected_risk_reduction_pct:48,recommended_crew_type:"Civil/drainage engineer + maintenance crew",critical_loads:"none",downstream_customers:318,feeder_id:"F-104",factor_wind:0,factor_rain:1.23,factor_tilt:0.75,factor_erosion:0,factor_corrosion:0,factor_drainage:0,factor_vegetation:0,factor_age:0,factor_thermal:0,factor_vibration:0,factor_partial_dc:0,factor_oil:0,factor_overload:0}
+];
+
+const INCIDENT_ASSETS = ["A-01","A-02","A-03","A-04","A-05","A-06","A-12","A-18","A-19","A-21","A-27","A-32","A-34","A-36"];
+const TOTAL_INCIDENTS = 20;
+const TOTAL_DOWNTIME_HRS = 646.2;
+
+// ── HELPERS ──
+const bandTint = b => ({critical:'#fde8e6',elevated:'#fef3e6',watch:'#fefce6',normal:'#eafaf1'}[b]||'#fff');
+const bandBadge = b => `<span class="badge ${b}">${b.toUpperCase()}</span>`;
+const tierBadge = t => `<span class="tier-badge ${t}">${t}</span>`;
+const fmtCur = v => '$' + Number(v).toLocaleString(undefined,{maximumFractionDigits:0});
+const fmtN = (v,d=1) => Number(v).toFixed(d);
+const causeLabel = c => c.replace(/_/g,' ');
+const isElec = a => a.asset_type === 'transformer' || a.asset_type === 'substation';
+
+// ── NAV ──
+document.querySelectorAll('#sidebar nav a').forEach(a => {
+  a.addEventListener('click', e => {
+    e.preventDefault();
+    const pg = a.dataset.page;
+    document.querySelectorAll('#sidebar nav a').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+    a.classList.add('active');
+    document.getElementById('page-' + pg).classList.add('active');
+    if (pg === 'asset-detail') renderDetail();
+    if (pg === 'reactive')     renderReactive();
+    if (pg === 'risk-table')   renderFullTable();
+  });
+});
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  const critical  = ASSETS.filter(a => a.risk_band === 'critical').length;
+  const elevated  = ASSETS.filter(a => a.risk_band === 'elevated').length;
+  const immediate = ASSETS.filter(a => a.action_tier === 'immediate').length;
+  const totalCust = ASSETS.reduce((s,a) => s + a.downstream_customers, 0);
+  document.getElementById('kpi-row').innerHTML = `
+    <div class="kpi red"><div class="val">${critical}</div><div class="lbl">Critical assets</div></div>
+    <div class="kpi orange"><div class="val">${elevated}</div><div class="lbl">Elevated assets</div></div>
+    <div class="kpi blue"><div class="val">${immediate}</div><div class="lbl">Immediate actions</div></div>
+    <div class="kpi green"><div class="val">${ASSETS.length}</div><div class="lbl">Assets monitored</div></div>
+    <div class="kpi blue"><div class="val">${(totalCust/1000).toFixed(1)}k</div><div class="lbl">Customers protected</div></div>`;
+  const top10 = ASSETS.slice(0,10);
+  document.getElementById('top10-body').innerHTML = top10.map((a,i) => `
+    <tr style="background:${bandTint(a.risk_band)}" onclick="openDetail('${a.asset_id}')">
+      <td><strong>${i+1}</strong></td>
+      <td><strong>${a.asset_id}</strong></td>
+      <td>${a.asset_type}</td>
+      <td>${bandBadge(a.risk_band)}</td>
+      <td>${fmtN(a.risk_score)}</td>
+      <td>${a.priority_score.toFixed(3)}</td>
+      <td>${causeLabel(a.dominant_cause)}</td>
+      <td>${a.critical_loads}</td>
+      <td>${a.downstream_customers.toLocaleString()}</td>
+      <td>${tierBadge(a.action_tier)}</td>
+    </tr>`).join('');
+}
+
+function openDetail(id) {
+  document.querySelectorAll('#sidebar nav a').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelector('[data-page="asset-detail"]').classList.add('active');
+  document.getElementById('page-asset-detail').classList.add('active');
+  document.getElementById('asset-select').value = id;
+  renderDetailForId(id);
+}
+
+// ── FULL TABLE ──
+let sortCol = 'priority_score', sortDir = -1;
+function renderFullTable() {
+  const fs = document.getElementById('filter-feeder');
+  if (fs.options.length === 1) {
+    [...new Set(ASSETS.map(a => a.feeder_id))].sort().forEach(f => {
+      const o = document.createElement('option'); o.value = f; o.textContent = f; fs.appendChild(o);
+    });
+  }
+  applyFilters();
+}
+function applyFilters() {
+  const band   = document.getElementById('filter-band').value;
+  const type   = document.getElementById('filter-type').value;
+  const feeder = document.getElementById('filter-feeder').value;
+  const search = document.getElementById('filter-search').value.trim().toLowerCase();
+  let data = ASSETS.filter(a => {
+    if (band   !== 'all' && a.risk_band  !== band)   return false;
+    if (type   !== 'all' && a.asset_type !== type)   return false;
+    if (feeder !== 'all' && a.feeder_id  !== feeder) return false;
+    if (search && !a.asset_id.toLowerCase().includes(search)) return false;
+    return true;
+  });
+  data = [...data].sort((a,b) => (a[sortCol] > b[sortCol] ? 1 : -1) * sortDir);
+  document.getElementById('full-body').innerHTML = data.map(a => `
+    <tr style="background:${bandTint(a.risk_band)}" onclick="openDetail('${a.asset_id}')">
+      <td><strong>${a.asset_id}</strong></td>
+      <td>${a.asset_type}</td>
+      <td>${bandBadge(a.risk_band)}</td>
+      <td>${fmtN(a.risk_score)}</td>
+      <td>${a.priority_score.toFixed(3)}</td>
+      <td>${fmtN(a.expected_loss,0)}</td>
+      <td>${fmtCur(a.estimated_intervention_cost)}</td>
+      <td>${causeLabel(a.dominant_cause)}</td>
+      <td>${tierBadge(a.action_tier)}</td>
+      <td>${a.downstream_customers.toLocaleString()}</td>
+    </tr>`).join('');
+  document.getElementById('table-count').textContent = `Showing ${data.length} of ${ASSETS.length} assets.`;
+}
+document.querySelectorAll('#full-table thead th').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col; if (!col) return;
+    if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = -1; }
+    applyFilters();
+  });
+});
+['filter-band','filter-type','filter-feeder'].forEach(id =>
+  document.getElementById(id).addEventListener('change', applyFilters));
+document.getElementById('filter-search').addEventListener('input', applyFilters);
+
+// ── ASSET DETAIL ──
+function renderDetail() {
+  const sel = document.getElementById('asset-select');
+  if (sel.options.length === 0) {
+    ASSETS.forEach(a => {
+      const o = document.createElement('option'); o.value = a.asset_id;
+      o.textContent = `${a.asset_id} — ${a.asset_type} (${a.risk_band})`; sel.appendChild(o);
+    });
+    sel.addEventListener('change', () => renderDetailForId(sel.value));
+  }
+  renderDetailForId(sel.value || ASSETS[0].asset_id);
+}
+function renderDetailForId(id) {
+  const a = ASSETS.find(x => x.asset_id === id); if (!a) return;
+  document.getElementById('asset-select').value = id;
+  const tierColor = {immediate:'var(--critical)',scheduled:'var(--elevated)',monitor:'var(--normal)'}[a.action_tier]||'#888';
+  document.getElementById('detail-metrics').innerHTML = `
+    <div class="metric"><div class="mv">${fmtN(a.risk_score)} / 100</div><div class="ml">Risk Score</div></div>
+    <div class="metric"><div class="mv">${a.priority_score.toFixed(3)}</div><div class="ml">Priority Score</div></div>
+    <div class="metric"><div class="mv">${fmtCur(a.estimated_intervention_cost)}</div><div class="ml">Intervention Cost</div></div>
+    <div class="metric"><div class="mv">${fmtN(a.expected_loss,0)}</div><div class="ml">Expected Loss Index</div></div>`;
+  document.getElementById('detail-info').innerHTML = `
+    <div style="margin-bottom:8px">
+      <strong>Risk Band:</strong> ${bandBadge(a.risk_band)} &nbsp;
+      <strong>Dominant Cause:</strong> <code>${causeLabel(a.dominant_cause)}</code>
+    </div>
+    <div style="font-size:0.85rem;color:var(--muted)">
+      <strong>Type:</strong> ${a.asset_type} &nbsp;|&nbsp;
+      <strong>Feeder:</strong> ${a.feeder_id} &nbsp;|&nbsp;
+      <strong>Critical Load:</strong> ${a.critical_loads} &nbsp;|&nbsp;
+      <strong>Customers:</strong> ${a.downstream_customers.toLocaleString()} &nbsp;|&nbsp;
+      <strong>Age:</strong> ${a.age_years} yrs &nbsp;|&nbsp;
+      <strong>Material:</strong> ${a.material}
+    </div>`;
+
+  // Civil factors
+  const civil = [
+    ['Wind',       a.factor_wind],['Rain',      a.factor_rain],
+    ['Tilt',       a.factor_tilt],['Erosion',   a.factor_erosion],
+    ['Corrosion',  a.factor_corrosion],['Drainage', a.factor_drainage],
+    ['Vegetation', a.factor_vegetation],['Age',  a.factor_age]
+  ];
+  // Electrical factors (transformer/substation only)
+  const elec = isElec(a) ? [
+    ['Thermal',    a.factor_thermal],['Vibration',   a.factor_vibration],
+    ['Part. Disch.',a.factor_partial_dc],['Oil Quality', a.factor_oil],
+    ['Overload',   a.factor_overload]
+  ] : [];
+
+  const allVals = [...civil, ...elec].map(x => x[1]);
+  const maxVal  = Math.max(...allVals, 1);
+
+  const barHtml = (label, val, cls) => `
+    <div class="bar-row">
+      <div class="bar-label">${label}</div>
+      <div class="bar-track"><div class="bar-fill ${cls}" style="width:${(val/maxVal*100).toFixed(1)}%"></div></div>
+      <div class="bar-val">${fmtN(val,2)}</div>
+    </div>`;
+
+  let chartHtml = '<div class="chart-section-label" style="color:var(--accent)">Civil / Weather</div>';
+  civil.sort((x,y) => y[1]-x[1]).forEach(([l,v]) => { chartHtml += barHtml(l,v,'civil'); });
+  if (elec.length) {
+    chartHtml += '<div class="chart-section-label" style="color:var(--elevated)">Electrical / Sensor</div>';
+    elec.sort((x,y) => y[1]-x[1]).forEach(([l,v]) => { chartHtml += barHtml(l,v,'elec'); });
+  }
+  document.getElementById('factor-chart').innerHTML = chartHtml;
+
+  const total = allVals.reduce((s,v) => s+v, 0);
+  document.getElementById('factor-caption').textContent =
+    `Total raw points: ${fmtN(total,1)} → capped risk score: ${fmtN(a.risk_score,1)}`;
+
+  const ad = document.getElementById('detail-action');
+  ad.className = `action-card ${a.action_tier}`;
+  ad.innerHTML = `<strong>Tier:</strong> <span style="color:${tierColor}">${a.action_tier.toUpperCase()}</span><br><br>${a.recommended_action}`;
+  document.getElementById('detail-crew').innerHTML      = `<strong>Crew:</strong> ${a.recommended_crew_type}`;
+  document.getElementById('detail-reduction').innerHTML = `<strong>Expected risk reduction after action:</strong> ${a.expected_risk_reduction_pct}%`;
+}
+
+// ── REACTIVE VS PREVENTIVE ──
+function renderReactive() {
+  const top10ids    = ASSETS.slice(0,10).map(a => a.asset_id);
+  const inBoth      = INCIDENT_ASSETS.filter(id => top10ids.includes(id));
+  const onlyPrio    = top10ids.filter(id => !INCIDENT_ASSETS.includes(id));
+  const onlyInc     = INCIDENT_ASSETS.filter(id => !top10ids.includes(id));
+  document.getElementById('stat-cards').innerHTML = `
+    <div class="stat-card"><div class="sv">${inBoth.length}</div><div class="sl">Top-10 assets also with past incidents</div></div>
+    <div class="stat-card"><div class="sv">${onlyPrio.length}</div><div class="sl">Top-10 assets with NO incident history</div></div>
+    <div class="stat-card"><div class="sv">${onlyInc.length}</div><div class="sl">Incident assets NOT in top-10</div></div>`;
+  const top10    = ASSETS.slice(0,10);
+  const preCost  = top10.reduce((s,a) => s+a.estimated_intervention_cost, 0);
+  const preCust  = top10.reduce((s,a) => s+a.downstream_customers, 0);
+  const reactCost= TOTAL_DOWNTIME_HRS * 50;
+  document.getElementById('reactive-stats').innerHTML = `
+    <p>&#x2022; ${TOTAL_INCIDENTS} recorded incidents</p>
+    <p>&#x2022; ${TOTAL_DOWNTIME_HRS.toFixed(1)} total downtime hours</p>
+    <p>&#x2022; Estimated cost of failures: <strong>${fmtCur(reactCost)}</strong></p>`;
+  document.getElementById('preventive-stats').innerHTML = `
+    <p>&#x2022; ${top10.length} assets addressed proactively</p>
+    <p>&#x2022; ${preCust.toLocaleString()} customers protected</p>
+    <p>&#x2022; Estimated intervention cost: <strong>${fmtCur(preCost)}</strong></p>`;
+  document.getElementById('key-takeaway').innerHTML =
+    `<strong>Key takeaway:</strong> GridShield's priority queue places historically incident-prone assets (${inBoth.length} of ${top10.length}) in the top-10 <em>before</em> a failure occurs, while intervention costs (${fmtCur(preCost)}) are a fraction of reactive costs (${fmtCur(reactCost)}).`;
+  document.getElementById('reactive-body').innerHTML = top10.map(a => {
+    const had = INCIDENT_ASSETS.includes(a.asset_id);
+    return `<tr style="background:${bandTint(a.risk_band)}">
+      <td><strong>${a.asset_id}</strong></td>
+      <td>${bandBadge(a.risk_band)}</td>
+      <td>${fmtN(a.risk_score)}</td>
+      <td>${a.priority_score.toFixed(3)}</td>
+      <td>${causeLabel(a.dominant_cause)}</td>
+      <td>${a.critical_loads}</td>
+      <td>${a.downstream_customers.toLocaleString()}</td>
+      <td>${had ? '<span style="color:var(--critical);font-weight:700">Yes</span>' : '<span style="color:var(--normal)">No</span>'}</td>
+      <td>${fmtCur(a.estimated_intervention_cost)}</td>
+    </tr>`;
+  }).join('');
+}
+
+// ── INIT ──
+renderDashboard();
+renderFullTable();
+</script>
+</body>
+</html>
