@@ -60,7 +60,7 @@ pip install streamlit pandas
 
 ```bash
 # From the submission root:
-python -m streamlit run src/app.py
+python -m streamlit run src/app.py --server.port 8502
 ```
 
 App opens at **http://localhost:8502**
