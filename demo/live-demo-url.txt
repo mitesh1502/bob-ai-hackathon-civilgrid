@@ -1,16 +1,1 @@
-LIVE DEMO (GitHub Pages — interactive static dashboard)
 https://mitesh1502.github.io/bob-ai-hackathon-civilgrid/
-
-All 4 pages (Dashboard, Risk Table, Asset Detail, Reactive vs Preventive)
-work in any browser with no install required — all data is embedded in the page.
-
----
-
-FULL STREAMLIT APP (run locally — 7 tabs including Advisor Chat + Metrics)
-
-  pip install streamlit pandas
-  python -m streamlit run src/app.py
-
-App opens at: http://localhost:8501  (Streamlit default port)
-
-See docs/setup-guide.md for full instructions.
