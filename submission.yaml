@@ -82,3 +82,53 @@ submission:
     - "Ranked asset priority queue under live weather scenarios and time horizons"
     - "Conversational advisor chat for querying and comparing assets"
     - "Stress-tested evaluation panel with Recall@Top-10 and loss-avoided metrics"
+    - "Interactive Leaflet.js Grid Map with 40 color-coded asset markers and clickable popups"
+
+  tech_stack:
+    languages:
+      - "Python"
+      - "JavaScript"
+      - "HTML"
+      - "CSS"
+    frameworks:
+      - "Streamlit"
+      - "pytest"
+      - "Leaflet.js"
+    ibm_technologies:
+      - "IBM Bob 2.0"
+    databases: []
+    other:
+      - "pandas"
+      - "OpenStreetMap"
+      - "GitHub Pages"
+
+  what_we_are_most_proud_of: >
+    The safety architecture is the strongest part of the submission. The advisor
+    genuinely refuses control requests (test-verified in 91 unit tests). Every
+    output row carries a hard-coded safety note enforced in the data pipeline
+    itself, not just the UI. The delta-based asset comparison produces an
+    explicit contrast sentence and factor-level diff rather than two parallel
+    summaries, and the priority formula cleanly separates raw risk_score from
+    priority_score so a cheap-to-fix hospital transformer correctly outranks a
+    more expensive remote pole — fully auditable with no hidden weights.
+
+  known_limitations: >
+    All electrical sensor readings are synthetic (parametric distributions) —
+    real IoT calibration is required for production. Intervention costs are
+    approximate placeholders; a real deployment needs utility-calibrated cost
+    data. The 13-factor rule-based scoring cannot detect novel failure modes
+    outside its defined factors. Risk scores are stateless (no drift detection
+    or trend analysis). Weather is aggregated as max over a 3-day window rather
+    than hourly resolution.
+
+# =============================================================================
+# ARTIFACT LOCATIONS
+# =============================================================================
+artifacts:
+  source_code: "src/"
+  setup_guide: "docs/setup-guide.md"
+  architecture_doc: "docs/architecture.md"
+  demo_video: "demo/demo-video-link.txt"
+  live_demo: "demo/live-demo-url.txt"
+  screenshots: "demo/screenshots/"
+  presentation: "presentation/"
